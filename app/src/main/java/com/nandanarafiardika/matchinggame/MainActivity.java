@@ -2,9 +2,9 @@ package com.nandanarafiardika.matchinggame;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
-import android.util.Pair;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -13,9 +13,7 @@ import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
@@ -23,22 +21,24 @@ public class MainActivity extends AppCompatActivity {
     private static final int COLS = 4;
     private static final int ROWS = 5;
 
-    int[] selectedCard = new int[2];
+    ViewFlipper[] selectedCard = new ViewFlipper[2];
 
-    TextView player1, player2, displayTurn;
+    TextView player1Text, player2Text, displayTurn;
 
     int turn, attempt = 1;
+    int player1, player2 = 0;
 
     //total: 10 blocks / max 4*5 grid
-    private int[] cards = {R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand, R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand};
+    //don't hardcode these blocks!!!
+    private final int[] cards = {R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand, R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        player1 = findViewById(R.id.player_1);
-        player2 = findViewById(R.id.player_2);
+        player1Text = findViewById(R.id.player_1);
+        player2Text = findViewById(R.id.player_2);
         displayTurn = findViewById(R.id.turn);
 
         LinearLayout grid = findViewById(R.id.grid);
@@ -55,76 +55,81 @@ public class MainActivity extends AppCompatActivity {
             rowLayout.setLayoutParams(rowParams);
 
             for(int col = 0; col < COLS; col++){
-//                ImageView imageView = new ImageView(this);
-//                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, 140,1);
-//                imageView.setLayoutParams(params);
-////                imageView.setImageResource(R.drawable.glass);
-//                imageView.setImageResource(cards[row * COLS + col]);
-//
-//                imageView.setTag(cards[row * COLS + col]);
-//
-//                imageView.setOnClickListener(v -> clickEvent(imageView, (int) v.getTag()));
-//                rowLayout.addView(imageView);
 
                 ViewFlipper viewFlipper = new ViewFlipper(this);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, 140, 1);
                 viewFlipper.setLayoutParams(params);
                 viewFlipper.setTag(cards[row * COLS + col]);
 
+                LinearLayout.LayoutParams matchParent = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+
+                ImageView cover = new ImageView(this);
+                cover.setImageResource(R.drawable.glass);
+                cover.setLayoutParams(matchParent);
+                viewFlipper.addView(cover);
+
+                ImageView card = new ImageView(this);
+                card.setImageResource(cards[row * COLS + col]);
+                card.setLayoutParams(matchParent);
+                viewFlipper.addView(card);
+
+                viewFlipper.setOnClickListener((v) -> clickEvent(viewFlipper));
+
+                rowLayout.addView(viewFlipper);
             }
 
             grid.addView(rowLayout);
         }
     }
 
-    private void clickEvent(ImageView imageView, int tag){
+    private void clickEvent(ViewFlipper card){
         if(attempt == 1){
-            //CHANGE IT TO UNIQUE these shouldnt use tag!
-            selectedCard[0] = tag;
+            selectedCard[0] = card;
             attempt = 2;
         }
         else{
-            selectedCard[1] = tag;
+            selectedCard[1] = card;
             attempt = 1;
 
             Handler handler = new Handler();
-            handler.postDelayed(() -> check(imageView, tag), 1000);
+            handler.postDelayed(this::check, 1000);
         }
-        imageView.setImageResource(R.drawable.diamond_ore);
-        //Toast.makeText(this, "you clicked " + tag, Toast.LENGTH_SHORT).show(); FOR DEBUG
-
-        //stuff about first or second card
+        card.setDisplayedChild(1);
     }
 
-    private void check(ImageView imageView, int tag){
-        if(selectedCard[0] == selectedCard[1]){
-            //card match, set visibility to invisible
-            //turn stay
-            imageView.setVisibility(View.INVISIBLE);
+    @SuppressLint("SetTextI18n")
+    private void check(){
+        //still need to find a way so that user cant click the previously chosen
+        if(selectedCard[0].getTag().equals(selectedCard[1].getTag())){
+            selectedCard[0].setVisibility(View.INVISIBLE);
+            selectedCard[1].setVisibility(View.INVISIBLE);
+            if(turn == 1){
+                player1++;
+            }
+            else{
+                player2++;
+            }
         }
         else{
-            imageView.setImageResource(R.drawable.glass);
-//            LinearLayout grid = findViewById(R.id.grid);
-//            for (int i = 0; i < grid.getChildCount(); i++) {
-//                View view = grid.getChildAt(i);
-//                if (view instanceof ImageView) {
-//                    ImageView imageView = (ImageView) view;
-//                    imageView.setImageResource(R.drawable.glass);
-//                }
-//            }
+            selectedCard[0].setDisplayedChild(0);
+            selectedCard[1].setDisplayedChild(0);
             if(turn == 1){
                 turn = 2;
             }
             else{
                 turn = 1;
             }
-            displayTurn.setText("Player " + turn + " Turn");
         }
+        player1Text.setText(Integer.toString(player1));
+        player2Text.setText(Integer.toString(player2));
+        displayTurn.setText("Player " + turn + " Turn");
         checkEnd();
     }
 
     private void checkEnd(){
-        //if every imageview is invisible, game over
+        if(player1 + player2 == ROWS * COLS / 2){
+            Toast.makeText(this, player1 == player2 ? "It's a Tie!" : (player1 > player2 ? "Player 1" : "Player 2") + " Wins!", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void shuffle() {
