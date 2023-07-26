@@ -13,13 +13,16 @@ import android.widget.Toast;
 import android.widget.ViewFlipper;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
     private static final int COLS = 4;
-    private static final int ROWS = 5;
+    private static final int ROWS = 6;
+
+    int cardRequired = ROWS * COLS / 2;
 
     ViewFlipper[] selectedCard = new ViewFlipper[2];
 
@@ -28,9 +31,11 @@ public class MainActivity extends AppCompatActivity {
     int turn, attempt = 1;
     int player1, player2 = 0;
 
-    //total: 10 blocks / max 4*5 grid
-    //don't hardcode these blocks!!!
-    private final int[] cards = {R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand, R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand};
+    //total: 12 blocks / max 4*6 grid
+    private final int[] cards = {R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand, R.drawable.blue_ice, R.drawable.bookshelf};
+
+    //store cards used in game
+    int[] shuffledCards = new int[cardRequired * 2];
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +47,8 @@ public class MainActivity extends AppCompatActivity {
         displayTurn = findViewById(R.id.turn);
 
         LinearLayout grid = findViewById(R.id.grid);
+        //before create grid, prompt user with row & col required, has to be even numbers
+
         createGrid(grid);
     }
 
@@ -59,7 +66,7 @@ public class MainActivity extends AppCompatActivity {
                 ViewFlipper viewFlipper = new ViewFlipper(this);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, 140, 1);
                 viewFlipper.setLayoutParams(params);
-                viewFlipper.setTag(cards[row * COLS + col]);
+                viewFlipper.setTag(shuffledCards[row * COLS + col]);
 
                 LinearLayout.LayoutParams matchParent = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
 
@@ -69,7 +76,7 @@ public class MainActivity extends AppCompatActivity {
                 viewFlipper.addView(cover);
 
                 ImageView card = new ImageView(this);
-                card.setImageResource(cards[row * COLS + col]);
+                card.setImageResource(shuffledCards[row * COLS + col]);
                 card.setLayoutParams(matchParent);
                 viewFlipper.addView(card);
 
@@ -83,23 +90,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void clickEvent(ViewFlipper card){
-        if(attempt == 1){
-            selectedCard[0] = card;
-            attempt = 2;
-        }
-        else{
-            selectedCard[1] = card;
-            attempt = 1;
+        if(card.getDisplayedChild() == 0){
+            if(attempt == 1){
+                selectedCard[0] = card;
+                attempt = 2;
+            }
+            else{
+                selectedCard[1] = card;
+                attempt = 1;
 
-            Handler handler = new Handler();
-            handler.postDelayed(this::check, 1000);
+                Handler handler = new Handler();
+                handler.postDelayed(this::check, 1000);
+            }
+            card.setDisplayedChild(1);
         }
-        card.setDisplayedChild(1);
     }
 
     @SuppressLint("SetTextI18n")
     private void check(){
-        //still need to find a way so that user cant click the previously chosen
         if(selectedCard[0].getTag().equals(selectedCard[1].getTag())){
             selectedCard[0].setVisibility(View.INVISIBLE);
             selectedCard[1].setVisibility(View.INVISIBLE);
@@ -133,19 +141,35 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void shuffle() {
-        //BEFORE ITS SHUFFLED, CHECK HOW MANY CARDS ARE REQUIRED, example: 5x4 uses 20 etc.
-        //i should also multiply the array here instead of hard code it
-        // Convert the primitive int array to a List<Integer>
+        int[] temp = Arrays.copyOf(cards, cards.length);
 
+        for(int i = 0; i < cardRequired; i++){
+            int randomIndex = (int) (Math.random() * temp.length);
+            shuffledCards[i] = temp[randomIndex];
+            shuffledCards[i + cardRequired] = temp[randomIndex];
+
+            //avoid duplicate
+            temp = removeCards(temp, randomIndex);
+        }
+
+        //shuffle
         List<Integer> list = new ArrayList<>();
-        for (int resourceId : cards) {
+        for (int resourceId : shuffledCards) {
             list.add(resourceId);
         }
 
         Collections.shuffle(list);
 
+        //turn list to array
         for (int i = 0; i < list.size(); i++) {
-            cards[i] = list.get(i);
+            shuffledCards[i] = list.get(i);
         }
+    }
+
+    private int[] removeCards(int[] array, int index){
+        int[] result = new int[array.length - 1];
+        System.arraycopy(array, 0, result, 0, index);
+        System.arraycopy(array, index + 1, result, index, array.length - index - 1);
+        return result;
     }
 }
