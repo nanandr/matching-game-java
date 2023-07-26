@@ -1,5 +1,6 @@
 package com.nandanarafiardika.matchinggame;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
@@ -37,6 +38,8 @@ public class MainActivity extends AppCompatActivity {
     //store cards used in game
     int[] shuffledCards = new int[cardRequired * 2];
 
+    private boolean checking = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -46,9 +49,14 @@ public class MainActivity extends AppCompatActivity {
         player2Text = findViewById(R.id.player_2);
         displayTurn = findViewById(R.id.turn);
 
-        LinearLayout grid = findViewById(R.id.grid);
-        //before create grid, prompt user with row & col required, has to be even numbers
+        //prompt asking player the grid size
 
+        startGame();
+    }
+
+    private void startGame(){
+        LinearLayout grid = findViewById(R.id.grid);
+        grid.removeAllViews();
         createGrid(grid);
     }
 
@@ -90,24 +98,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void clickEvent(ViewFlipper card){
-        if(card.getDisplayedChild() == 0){
+        if(!checking && card.getDisplayedChild() == 0){
+            card.setDisplayedChild(1);
             if(attempt == 1){
                 selectedCard[0] = card;
-                attempt = 2;
             }
-            else{
+            else if(attempt == 2){
                 selectedCard[1] = card;
-                attempt = 1;
 
                 Handler handler = new Handler();
                 handler.postDelayed(this::check, 1000);
+                checking = true;
             }
-            card.setDisplayedChild(1);
         }
+        attempt++;
     }
 
-    @SuppressLint("SetTextI18n")
     private void check(){
+        attempt = 1;
         if(selectedCard[0].getTag().equals(selectedCard[1].getTag())){
             selectedCard[0].setVisibility(View.INVISIBLE);
             selectedCard[1].setVisibility(View.INVISIBLE);
@@ -121,23 +129,28 @@ public class MainActivity extends AppCompatActivity {
         else{
             selectedCard[0].setDisplayedChild(0);
             selectedCard[1].setDisplayedChild(0);
-            if(turn == 1){
-                turn = 2;
-            }
-            else{
-                turn = 1;
-            }
+            turn = (turn == 1) ? 2 : 1;
         }
-        player1Text.setText(Integer.toString(player1));
-        player2Text.setText(Integer.toString(player2));
-        displayTurn.setText("Player " + turn + " Turn");
-        checkEnd();
+        updateText();
+        checkGameOver();
+        checking = false;
     }
 
-    private void checkEnd(){
+    private void checkGameOver(){
         if(player1 + player2 == ROWS * COLS / 2){
             Toast.makeText(this, player1 == player2 ? "It's a Tie!" : (player1 > player2 ? "Player 1" : "Player 2") + " Wins!", Toast.LENGTH_SHORT).show();
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Replay?");
+            builder.setPositiveButton("Yes", (dialog, which) -> resetGame());
+            builder.show();
         }
+    }
+
+    private void resetGame(){
+        player1 = player2 = 0;
+        turn = attempt = 1;
+        updateText();
+        startGame();
     }
 
     private void shuffle() {
@@ -157,7 +170,6 @@ public class MainActivity extends AppCompatActivity {
         for (int resourceId : shuffledCards) {
             list.add(resourceId);
         }
-
         Collections.shuffle(list);
 
         //turn list to array
@@ -171,5 +183,12 @@ public class MainActivity extends AppCompatActivity {
         System.arraycopy(array, 0, result, 0, index);
         System.arraycopy(array, index + 1, result, index, array.length - index - 1);
         return result;
+    }
+
+    @SuppressLint("SetTextI18n")
+    private void updateText(){
+        player1Text.setText(Integer.toString(player1));
+        player2Text.setText(Integer.toString(player2));
+        displayTurn.setText("Player " + turn + " Turn");
     }
 }
