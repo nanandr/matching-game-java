@@ -24,13 +24,12 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity {
 
     private static int COLS = 4; //MAX: 4
-    private static int ROWS = 4; //MAX: 6
-
-    private static final int cardRequired = ROWS * COLS / 2;
+    private static int ROWS = 6; //MAX: 6
 
     ViewFlipper[] selectedCard = new ViewFlipper[2];
 
     TextView player1Text, player2Text, displayTurn;
+    ImageView replay;
 
     int turn, attempt = 1;
     int player1, player2 = 0;
@@ -39,7 +38,7 @@ public class MainActivity extends AppCompatActivity {
     private static final int[] cards = {R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand, R.drawable.blue_ice, R.drawable.bookshelf};
 
     //store cards used in game
-    int[] shuffledCards = new int[cardRequired * 2];
+    int[] shuffledCards;
 
     private boolean checking = false;
 
@@ -48,11 +47,20 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        replay = findViewById(R.id.replay);
         player1Text = findViewById(R.id.player_1);
         player2Text = findViewById(R.id.player_2);
         displayTurn = findViewById(R.id.turn);
 
         inputGrid();
+
+        replay.setOnClickListener(v -> {
+            AlertDialog.Builder builder = new AlertDialog.Builder(this);
+            builder.setTitle("Replay");
+            builder.setMessage("Are you sure?");
+            builder.setPositiveButton("Yes", (dialog, which) -> resetGame());
+            builder.show();
+        });
     }
 
     //prompt asking player the grid size
@@ -78,18 +86,26 @@ public class MainActivity extends AppCompatActivity {
         builder.setPositiveButton("Ok", (dialog, which) -> {
             String rowsInput = rowsText.getText().toString();
             String colsInput = colsText.getText().toString();
-            if(!rowsInput.isEmpty() && !colsInput.isEmpty()) {
-                if((Integer.parseInt(rowsInput) * Integer.parseInt(colsInput)) % 2 == 0){
-                    ROWS = Integer.parseInt(rowsInput);
-                    COLS = Integer.parseInt(colsInput);
-                    startGame();
-                }
-                else{
-                    Toast.makeText(this, "Grid has to be even", Toast.LENGTH_SHORT).show();
-                }
+            if(rowsInput.isEmpty() || colsInput.isEmpty()) {
+                showToast("Please fill the input field");
+                return;
+            }
+
+            int gridSize = Integer.parseInt(rowsInput) * Integer.parseInt(colsInput);
+
+            if(gridSize > (cards.length * 2)){
+                showToast("Grid total must be below " + (cards.length * 2) + " (You filled " + gridSize + ")");
+            }
+            else if(Integer.parseInt(rowsInput) > 4){
+                    showToast("Grid can have a maximum of 4 rows");
+            }
+            else if(gridSize % 2 == 0){
+                ROWS = Integer.parseInt(rowsInput);
+                COLS = Integer.parseInt(colsInput);
+                startGame();
             }
             else{
-                Toast.makeText(this, "Please fill the input field", Toast.LENGTH_SHORT).show();
+                showToast("Grid must have an even number of cells");
             }
         });
         builder.show();
@@ -104,14 +120,14 @@ public class MainActivity extends AppCompatActivity {
     private void createGrid(LinearLayout grid){
         shuffle();
 
-        for(int row = 0; row < ROWS; row++){
+        for(int col = 0; col < COLS; col++){
             LinearLayout rowLayout = new LinearLayout(this);
             LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             rowParams.setMargins(0, 0, 0, 20);
             rowLayout.setGravity(Gravity.CENTER);
             rowLayout.setLayoutParams(rowParams);
 
-            for(int col = 0; col < COLS; col++){
+            for(int row = 0; row < ROWS; row++){
 
                 ViewFlipper viewFlipper = new ViewFlipper(this);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(160, 140);
@@ -180,7 +196,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkGameOver(){
         if(player1 + player2 == ROWS * COLS / 2){
-            Toast.makeText(this, player1 == player2 ? "It's a Tie!" : "Player " + (player1 > player2 ? "1" : "2") + " Wins!", Toast.LENGTH_SHORT).show();
+            showToast(player1 == player2 ? "It's a Tie!" : "Player " + (player1 > player2 ? "1" : "2") + " Wins!");
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Replay?");
             builder.setPositiveButton("Yes", (dialog, which) -> resetGame());
@@ -197,11 +213,12 @@ public class MainActivity extends AppCompatActivity {
 
     private void shuffle() {
         int[] temp = Arrays.copyOf(cards, cards.length);
+        shuffledCards = new int[ROWS * COLS];
 
-        for(int i = 0; i < cardRequired; i++){
+        for(int i = 0; i <(ROWS * COLS / 2); i++){
             int randomIndex = (int) (Math.random() * temp.length);
             shuffledCards[i] = temp[randomIndex];
-            shuffledCards[i + cardRequired] = temp[randomIndex];
+            shuffledCards[i + (ROWS * COLS / 2)] = temp[randomIndex];
 
             //avoid duplicate
             temp = removeCards(temp, randomIndex);
@@ -232,5 +249,9 @@ public class MainActivity extends AppCompatActivity {
         player1Text.setText(Integer.toString(player1));
         player2Text.setText(Integer.toString(player2));
         displayTurn.setText("Player " + turn + " Turn");
+    }
+
+    private void showToast(String message){
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
     }
 }
