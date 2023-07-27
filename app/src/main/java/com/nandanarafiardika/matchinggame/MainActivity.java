@@ -6,7 +6,10 @@ import androidx.appcompat.app.AppCompatActivity;
 import android.annotation.SuppressLint;
 import android.os.Bundle;
 import android.os.Handler;
+import android.text.InputType;
+import android.view.Gravity;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -20,10 +23,10 @@ import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
 
-    private static final int COLS = 4;
-    private static final int ROWS = 6;
+    private static int COLS = 4; //MAX: 4
+    private static int ROWS = 4; //MAX: 6
 
-    int cardRequired = ROWS * COLS / 2;
+    private static final int cardRequired = ROWS * COLS / 2;
 
     ViewFlipper[] selectedCard = new ViewFlipper[2];
 
@@ -33,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
     int player1, player2 = 0;
 
     //total: 12 blocks / max 4*6 grid
-    private final int[] cards = {R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand, R.drawable.blue_ice, R.drawable.bookshelf};
+    private static final int[] cards = {R.drawable.diamond_ore, R.drawable.cobblestone, R.drawable.furnace_front_on, R.drawable.grass_block_side, R.drawable.iron_block, R.drawable.netherrack, R.drawable.oak_log, R.drawable.oak_planks, R.drawable.obsidian, R.drawable.soul_sand, R.drawable.blue_ice, R.drawable.bookshelf};
 
     //store cards used in game
     int[] shuffledCards = new int[cardRequired * 2];
@@ -49,9 +52,47 @@ public class MainActivity extends AppCompatActivity {
         player2Text = findViewById(R.id.player_2);
         displayTurn = findViewById(R.id.turn);
 
-        //prompt asking player the grid size
+        inputGrid();
+    }
 
-        startGame();
+    //prompt asking player the grid size
+    private void inputGrid(){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Pick Grid Size");
+
+        LinearLayout layout = new LinearLayout(this);
+        layout.setOrientation(LinearLayout.VERTICAL);
+
+        EditText rowsText = new EditText(this);
+        rowsText.setHint("Input Rows");
+        rowsText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        layout.addView(rowsText);
+
+        EditText colsText = new EditText(this);
+        colsText.setInputType(InputType.TYPE_CLASS_NUMBER);
+        colsText.setHint("Input Cols");
+        layout.addView(colsText);
+
+        builder.setView(layout);
+
+        builder.setPositiveButton("Ok", (dialog, which) -> {
+            String rowsInput = rowsText.getText().toString();
+            String colsInput = colsText.getText().toString();
+            if(!rowsInput.isEmpty() && !colsInput.isEmpty()) {
+                if((Integer.parseInt(rowsInput) * Integer.parseInt(colsInput)) % 2 == 0){
+                    ROWS = Integer.parseInt(rowsInput);
+                    COLS = Integer.parseInt(colsInput);
+                    startGame();
+                }
+                else{
+                    Toast.makeText(this, "Grid has to be even", Toast.LENGTH_SHORT).show();
+                }
+            }
+            else{
+                Toast.makeText(this, "Please fill the input field", Toast.LENGTH_SHORT).show();
+            }
+        });
+        builder.show();
     }
 
     private void startGame(){
@@ -67,12 +108,13 @@ public class MainActivity extends AppCompatActivity {
             LinearLayout rowLayout = new LinearLayout(this);
             LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
             rowParams.setMargins(0, 0, 0, 20);
+            rowLayout.setGravity(Gravity.CENTER);
             rowLayout.setLayoutParams(rowParams);
 
             for(int col = 0; col < COLS; col++){
 
                 ViewFlipper viewFlipper = new ViewFlipper(this);
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(0, 140, 1);
+                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(160, 140);
                 viewFlipper.setLayoutParams(params);
                 viewFlipper.setTag(shuffledCards[row * COLS + col]);
 
@@ -110,8 +152,8 @@ public class MainActivity extends AppCompatActivity {
                 handler.postDelayed(this::check, 1000);
                 checking = true;
             }
+            attempt++;
         }
-        attempt++;
     }
 
     private void check(){
@@ -138,7 +180,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void checkGameOver(){
         if(player1 + player2 == ROWS * COLS / 2){
-            Toast.makeText(this, player1 == player2 ? "It's a Tie!" : (player1 > player2 ? "Player 1" : "Player 2") + " Wins!", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, player1 == player2 ? "It's a Tie!" : "Player " + (player1 > player2 ? "1" : "2") + " Wins!", Toast.LENGTH_SHORT).show();
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             builder.setTitle("Replay?");
             builder.setPositiveButton("Yes", (dialog, which) -> resetGame());
@@ -150,7 +192,7 @@ public class MainActivity extends AppCompatActivity {
         player1 = player2 = 0;
         turn = attempt = 1;
         updateText();
-        startGame();
+        inputGrid();
     }
 
     private void shuffle() {
