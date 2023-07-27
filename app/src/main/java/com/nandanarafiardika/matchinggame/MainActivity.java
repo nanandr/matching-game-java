@@ -4,6 +4,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.InputType;
@@ -22,14 +23,13 @@ import java.util.Collections;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-
     private static int COLS = 4; //MAX: 4
     private static int ROWS = 6; //MAX: 6
 
     ViewFlipper[] selectedCard = new ViewFlipper[2];
 
     TextView player1Text, player2Text, displayTurn;
-    ImageView replay;
+    ImageView icon, replay;
 
     int turn, attempt = 1;
     int player1, player2 = 0;
@@ -47,7 +47,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        icon = findViewById(R.id.icon);
         replay = findViewById(R.id.replay);
+
         player1Text = findViewById(R.id.player_1);
         player2Text = findViewById(R.id.player_2);
         displayTurn = findViewById(R.id.turn);
@@ -69,6 +71,7 @@ public class MainActivity extends AppCompatActivity {
         builder.setTitle("Pick Grid Size");
 
         LinearLayout layout = new LinearLayout(this);
+        layout.setPadding(16, 0, 16, 0);
         layout.setOrientation(LinearLayout.VERTICAL);
 
         EditText rowsText = new EditText(this);
@@ -95,11 +98,14 @@ public class MainActivity extends AppCompatActivity {
 
             if(gridSize > (cards.length * 2)){
                 showToast("Grid total must be below " + (cards.length * 2) + " (You filled " + gridSize + ")");
+                return;
             }
             else if(Integer.parseInt(rowsInput) > 4){
-                    showToast("Grid can have a maximum of 4 rows");
+                showToast("Grid can have a maximum of 4 rows");
+                return;
             }
-            else if(gridSize % 2 == 0){
+
+            if(gridSize % 2 == 0){
                 ROWS = Integer.parseInt(rowsInput);
                 COLS = Integer.parseInt(colsInput);
                 startGame();
@@ -109,12 +115,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         builder.show();
-    }
-
-    private void startGame(){
-        LinearLayout grid = findViewById(R.id.grid);
-        grid.removeAllViews();
-        createGrid(grid);
     }
 
     private void createGrid(LinearLayout grid){
@@ -128,23 +128,13 @@ public class MainActivity extends AppCompatActivity {
             rowLayout.setLayoutParams(rowParams);
 
             for(int row = 0; row < ROWS; row++){
-
                 ViewFlipper viewFlipper = new ViewFlipper(this);
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(160, 140);
                 viewFlipper.setLayoutParams(params);
                 viewFlipper.setTag(shuffledCards[row * COLS + col]);
 
-                LinearLayout.LayoutParams matchParent = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
-
-                ImageView cover = new ImageView(this);
-                cover.setImageResource(R.drawable.glass);
-                cover.setLayoutParams(matchParent);
-                viewFlipper.addView(cover);
-
-                ImageView card = new ImageView(this);
-                card.setImageResource(shuffledCards[row * COLS + col]);
-                card.setLayoutParams(matchParent);
-                viewFlipper.addView(card);
+                viewFlipper.addView(drawCard(R.drawable.glass));
+                viewFlipper.addView(drawCard(shuffledCards[row * COLS + col]));
 
                 viewFlipper.setOnClickListener((v) -> clickEvent(viewFlipper));
 
@@ -183,6 +173,7 @@ public class MainActivity extends AppCompatActivity {
             else{
                 player2++;
             }
+            icon.setImageResource((int) selectedCard[1].getTag());
         }
         else{
             selectedCard[0].setDisplayedChild(0);
@@ -204,6 +195,12 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    private void startGame(){
+        LinearLayout grid = findViewById(R.id.grid);
+        grid.removeAllViews();
+        createGrid(grid);
+    }
+
     private void resetGame(){
         player1 = player2 = 0;
         turn = attempt = 1;
@@ -221,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
             shuffledCards[i + (ROWS * COLS / 2)] = temp[randomIndex];
 
             //avoid duplicate
-            temp = removeCards(temp, randomIndex);
+            temp = removeCard(temp, randomIndex);
         }
 
         //shuffle
@@ -237,7 +234,15 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private int[] removeCards(int[] array, int index){
+    private ImageView drawCard(int drawable){
+        ImageView card = new ImageView(this);
+        card.setImageResource(drawable);
+        LinearLayout.LayoutParams matchParent = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.MATCH_PARENT);
+        card.setLayoutParams(matchParent);
+        return card;
+    }
+
+    private int[] removeCard(int[] array, int index){
         int[] result = new int[array.length - 1];
         System.arraycopy(array, 0, result, 0, index);
         System.arraycopy(array, index + 1, result, index, array.length - index - 1);
