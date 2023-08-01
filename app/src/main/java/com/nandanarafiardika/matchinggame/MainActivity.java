@@ -4,7 +4,6 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.annotation.SuppressLint;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.os.Handler;
 import android.text.InputType;
@@ -97,11 +96,12 @@ public class MainActivity extends AppCompatActivity {
             int gridSize = Integer.parseInt(rowsInput) * Integer.parseInt(colsInput);
 
             if(gridSize > (cards.length * 2)){
-                showToast("Grid total must be below " + (cards.length * 2) + " (You filled " + gridSize + ")");
+                showToast("Grid total must be below " + (cards.length * 2) + " \n(You filled " + gridSize + ")");
                 return;
             }
-            else if(Integer.parseInt(rowsInput) > 4){
-                showToast("Grid can have a maximum of 4 rows");
+
+            if(Integer.parseInt(rowsInput) > 4 || Integer.parseInt(colsInput) > 6){
+                showToast("Grid can have a maximum of \n4 rows & 6 columns");
                 return;
             }
 
