@@ -1,3 +1,5 @@
 <resources>
-    <string name="app_name">MatchingGame</string>
+    <string name="app_name">nandana - BlocksGuess</string>
+    <string name="player_1">Player 1</string>
+    <string name="player_2">Player 2</string>
 </resources>
